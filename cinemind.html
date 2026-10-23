@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CineMind AI</title>
+<style>
+:root{--bg:#0d1017;--bg2:#161b26;--ink:#f3efe3;--mute:#98a0b3;--gold:#ffc61a;--line:#2a3142;--ok:#3ddc97;color-scheme:dark}
+@media (prefers-color-scheme:light){:root{--bg:#0d1017;--ink:#f3efe3}}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{background:radial-gradient(1200px 500px at 50% -10%,#232a3b,var(--bg));color:var(--ink);font:16px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;overflow-x:hidden}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+:focus-visible,.focus{outline:3px solid #fff;outline-offset:2px}
+.logo{font-weight:800;letter-spacing:.5px}.logo b{color:var(--gold)}
+#splash{position:fixed;inset:0;z-index:9;display:grid;place-content:center;text-align:center;background:var(--bg);transition:opacity .6s}
+#splash .logo{font-size:clamp(40px,9vw,84px)}#splash p{color:var(--mute);margin-top:10px}
+#splash.off{opacity:0;pointer-events:none}
+nav{display:flex;gap:6px;align-items:center;padding:14px 4vw;position:sticky;top:0;background:#0d1017e6;backdrop-filter:blur(8px);z-index:5}
+nav .logo{margin-right:18px;font-size:20px}
+nav button{padding:7px 16px;border-radius:99px;color:var(--mute)}
+nav button.on{background:var(--gold);color:#1a1400;font-weight:600}
+main{padding:8px 4vw 60px}
+h2{font-size:15px;color:var(--mute);margin:22px 0 10px;font-weight:600}
+.row{display:flex;gap:14px;overflow-x:auto;padding:6px 4px 12px;scroll-snap-type:x proximity}
+.tile{flex:0 0 clamp(140px,17vw,200px);aspect-ratio:16/10;border-radius:12px;padding:10px;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;position:relative;scroll-snap-align:start;transition:transform .15s}
+.tile:hover,.tile:focus-visible{transform:scale(1.06)}
+.tile strong{font-size:13px;text-shadow:0 1px 6px #0008}.tile small{font-size:11px;opacity:.85}
+.bar{position:absolute;left:10px;right:10px;bottom:6px;height:3px;background:#0005;border-radius:3px}.bar i{display:block;height:100%;background:#fff;border-radius:3px}
+.tile.cw{padding-bottom:18px}
+.mood{text-align:center;padding:40px 0 10px}
+.mood h1{font-size:clamp(24px,4vw,36px)}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:20px 0}
+.chip{padding:10px 20px;border-radius:12px;background:var(--bg2);border:1px solid var(--line)}
+.chip.on{background:#1b8cff;border-color:#1b8cff;font-weight:600}
+.voice{display:flex;gap:10px;align-items:center;max-width:460px;margin:0 auto;background:var(--bg2);border:1px solid var(--line);border-radius:99px;padding:6px 6px 6px 8px}
+.voice input{flex:1;background:none;border:0;color:var(--ink);font:inherit;outline:0;padding:6px}
+.mic{width:34px;height:34px;border-radius:50%;background:#12c6e8;color:#04222a;font-weight:700}
+.mic.live{animation:p 1s infinite}@keyframes p{50%{box-shadow:0 0 0 8px #12c6e855}}
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,230px));gap:18px;justify-content:center;margin-top:10px}
+.card{aspect-ratio:2/3;border-radius:16px;padding:14px;text-align:left;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.card .m{position:absolute;top:12px;right:12px;background:#6bf0a8;color:#06301a;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px}
+.card strong{font-size:20px}.card small{opacity:.9}
+.detail{display:flex;gap:32px;align-items:center;flex-wrap:wrap;padding:30px 0}
+.poster{width:min(240px,60vw);aspect-ratio:2/3;border-radius:14px}
+.detail h1{font-size:clamp(28px,5vw,44px)}
+.meta{color:var(--mute);margin:6px 0 14px}.why{color:var(--gold);margin:12px 0 18px}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:10px 20px;border-radius:10px;background:var(--bg2);border:1px solid var(--line)}
+.btn.on{background:var(--gold);color:#1a1400;font-weight:700}
+#toast{position:fixed;top:70px;right:4vw;background:var(--ok);color:#052e1b;padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transform:translateY(-8px);transition:.25s;z-index:8}
+#toast.show{opacity:1;transform:none}
+.empty{color:var(--mute);padding:40px 0}
+.hint{position:fixed;bottom:10px;left:0;right:0;text-align:center;color:var(--mute);font-size:12px;pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="splash"><div><div class="logo">Cine<b>Mind</b> AI</div><p>Less Searching, More Watching — Entertainment That Understands You.</p></div></div>
+<nav><span class="logo">Cine<b>Mind</b> AI</span>
+<button data-v="home">Home</button><button data-v="discover">Discover</button><button data-v="watch">Watchlist</button><button data-v="voice">Voice</button></nav>
+<main id="app"></main>
+<div id="toast"></div>
+<div class="hint">Use arrow keys / Enter on a TV remote or keyboard · Esc to go back</div>
+<script>
+const G={Crime:["#5b6cff","#7a3fa0"],Drama:["#e0568d","#b3456f"],"Sci-Fi":["#12c6e8","#0a74c4"],Thriller:["#e8793a","#b0451d"],Comedy:["#d9c52e","#a8a01c"],Mystery:["#5be3a0","#1fa58d"],Action:["#e89a3a","#c0611d"],Adventure:["#1ea7e8","#1a6fd0"],Romance:["#e86a5a","#b24a6a"],Family:["#d8c73a","#8fb02a"]};
+const M=[
+["Neon Harbor","Crime","2h",7.9,["Thrilled","Curious"],"Gritty, fast, under 2h","A dockside detective follows a trail of stolen neon signs into a smuggling ring."],
+["Paper Moons","Drama","1h 40m",8.0,["Romantic","Relaxed"],"Gentle and moving","Two siblings rebuild their late father's paper-lantern shop."],
+["The Last Orbit","Sci-Fi","2h 5m",8.3,["Curious","Thrilled"],"Big ideas, great visuals","A crew on a failing station has one orbit left to decide who goes home."],
+["Midnight Signal","Thriller","1h 52m",8.1,["Thrilled"],"Tight pacing, twist endings","A night-shift radio host picks up a broadcast that predicts the future. Each prediction pulls her deeper into a city-wide secret."],
+["Laugh Track","Comedy","1h 30m",7.4,["Happy","Relaxed"],"Easy laughs","A failing sitcom writer has to survive one live taping."],
+["Hollow Pines","Mystery","1h 48m",7.8,["Thrilled","Curious"],"Slow-burn mystery","A small-town sheriff reopens a case no one in Hollow Pines will discuss."],
+["Quiet Machines","Sci-Fi","1h 55m",7.6,["Curious","Relaxed"],"Calm, thoughtful sci-fi","Household robots begin to hum the same song."],
+["Iron Tide","Action","2h 10m",7.5,["Thrilled","Happy"],"Non-stop action","A coast guard crew races a storm and a hijacked tanker."],
+["Blue Meridian","Adventure","2h",7.7,["Happy","Curious"],"Feel-good journey","Three friends sail the line between two time zones."],
+["Rooftop Summer","Romance","1h 35m",7.7,["Romantic","Happy"],"Warm and sweet","Two neighbours share one rooftop and one long summer."],
+["Gold Rush Kids","Family","1h 25m",7.2,["Happy","Relaxed"],"Fun for everyone","Kids in a ghost town find a map in a cereal box."],
+["Staying Over","Romance","1h 45m",7.3,["Romantic","Relaxed"],"Cosy date-night pick","A snowed-in train brings two strangers closer."]
+].map((a,i)=>({id:i,t:a[0],g:a[1],len:a[2],r:a[3],moods:a[4],why:a[5],d:a[6],yr:2025,grad:`linear-gradient(135deg,${G[a[1]][0]},${G[a[1]][1]})`,prog:[.6,.35,.8,.5,.2][i]||0}));
+const by=n=>M.find(m=>m.t===n);
+const rows={cw:["Neon Harbor","Paper Moons","The Last Orbit","Midnight Signal","Laugh Track"],pick:["Midnight Signal","Hollow Pines","Quiet Machines","Iron Tide","Blue Meridian"],tr:["Rooftop Summer","Gold Rush Kids","Staying Over","Laugh Track","The Last Orbit"]};
+let S={v:"home",mood:"Thrilled",q:"",wl:JSON.parse(sessionStorage.getItem("wl")||"[]"),cur:null,prev:"home"};
+try{S.wl=JSON.parse(localStorage.getItem("cm_wl")||"[]")}catch(e){}
+const save=()=>{try{localStorage.setItem("cm_wl",JSON.stringify(S.wl))}catch(e){}};
+const $=s=>document.querySelector(s),app=$("#app");
+const tile=(m,cw)=>`<button class="tile${cw?" cw":""}" style="background:${m.grad}" data-open="${m.id}"><strong>${m.t}</strong><small>${m.g} · ${m.len}</small>${cw?`<span class="bar"><i style="width:${m.prog*100}%"></i></span>`:""}</button>`;
+const row=(h,list,cw)=>`<h2>${h}</h2><div class="row">${list.map(n=>tile(by(n),cw)).join("")}</div>`;
+// scoring: mood match + rating + keyword boost from voice/text query
+function rank(){const q=S.q.toLowerCase();return M.map(m=>{let s=60+(m.moods.includes(S.mood)?25:0)+(m.moods[0]===S.mood?5:0)+(m.r-7)*4;
+if(q&&(m.g.toLowerCase().includes(q)||m.t.toLowerCase().includes(q)||m.why.toLowerCase().includes(q)||q.includes(m.g.toLowerCase())))s+=12;
+return{m,s:Math.min(99,Math.round(s))}}).sort((a,b)=>b.s-a.s).filter(x=>x.m.moods.includes(S.mood)||S.q).slice(0,3)}
+function render(){document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===(S.v==="detail"?S.prev:S.v)));
+if(S.v==="home")app.innerHTML=row("Continue Watching",rows.cw,1)+row("Picked for you tonight",rows.pick)+row("Trending now",rows.tr);
+else if(S.v==="discover"||S.v==="voice"){const moods=["Happy","Thrilled","Relaxed","Curious","Romantic"],e={Happy:"😄",Thrilled:"🤯",Relaxed:"😌",Curious:"🧠",Romantic:"💕"};
+const res=rank();
+app.innerHTML=`<div class="mood"><h1>How are you feeling tonight?</h1><div class="chips">${moods.map(x=>`<button class="chip${x===S.mood?" on":""}" data-mood="${x}">${e[x]} ${x}</button>`).join("")}</div>
+<form class="voice" id="vf" onsubmit="return false"><button type="button" class="mic" id="mic" aria-label="Speak">●</button><input id="q" value="${S.q.replace(/"/g,"&quot;")}" placeholder='Say "Alexa, find me a thriller"'></form></div>
+<h2 style="text-align:center;font-size:24px;color:var(--ink)">Because you're in a ${S.mood.toLowerCase()} mood</h2>
+<div class="picks">${res.length?res.map(({m,s})=>`<button class="card" style="background:${m.grad}" data-open="${m.id}"><span class="m">${s}% match</span><strong>${m.t}</strong><small>${m.g} · ${m.len}</small><small>✦ ${m.why}</small></button>`).join(""):`<p class="empty">No matches yet. Try another mood or a genre.</p>`}</div>`;
+const q=$("#q");q.onkeydown=e=>{if(e.key==="Enter"){parseQuery(q.value);}};$("#mic").onclick=listen;
+if(S.v==="voice"&&!S.auto){S.auto=1;q.focus()}}
+else if(S.v==="watch")app.innerHTML=`<h2>Your Watchlist</h2>`+(S.wl.length?`<div class="row">${S.wl.map(i=>tile(M[i])).join("")}</div>`:`<p class="empty">Your watchlist is empty. Open a title and choose Watchlist to save it.</p>`);
+else if(S.v==="detail"){const m=M[S.cur],on=S.wl.includes(m.id);
+app.innerHTML=`<div class="detail"><div class="poster" style="background:${m.grad}"></div><div><h1>${m.t}</h1><p class="meta">${m.yr} · ${m.g} · ${m.len} · ★ ${m.r} · ${rank0(m)}% match</p><p style="max-width:52ch">${m.d}</p><p class="why">✦ Why for you: ${m.why.toLowerCase()}, under 2 hours.</p>
+<div class="btns"><button class="btn" data-act="play">▶ Play</button><button class="btn${on?" on":""}" data-act="wl">${on?"✓ In watchlist":"+ Watchlist"}</button><button class="btn" data-act="trailer">Trailer</button></div></div></div>`;}
+const f=app.querySelector("button");}
+const rank0=m=>Math.min(99,70+(m.moods.includes(S.mood)?20:0)+Math.round((m.r-7)*5));
+function parseQuery(t){t=t.toLowerCase();const map={thriller:"Thrilled",thrilling:"Thrilled",happy:"Happy",funny:"Happy",comedy:"Happy",relax:"Relaxed",calm:"Relaxed",romantic:"Romantic",romance:"Romantic",love:"Romantic",curious:"Curious","sci-fi":"Curious",mystery:"Curious"};
+for(const k in map)if(t.includes(k)){S.mood=map[k];break}
+S.q=t.replace(/^(alexa|hey cinemind)[, ]*(find me|show me|play)?\s*(a|an)?\s*/,"").trim();S.v="discover";render();}
+function listen(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){toast("Voice isn't supported here. Type your request instead.");$("#q").focus();return}
+const r=new R();r.lang="en-IN";const b=$("#mic");b.classList.add("live");r.onresult=e=>{const t=e.results[0][0].transcript;$("#q").value=t;parseQuery(t)};r.onend=()=>b.classList.remove("live");r.onerror=()=>toast("Couldn't hear that. Try again.");r.start()}
+let tt;function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("show"),2000)}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+if(b.dataset.v){S.v=b.dataset.v;S.auto=0;render()}
+else if(b.dataset.open){S.prev=S.v==="detail"?S.prev:S.v;S.cur=+b.dataset.open;S.v="detail";render()}
+else if(b.dataset.mood){S.mood=b.dataset.mood;S.q="";render()}
+else if(b.dataset.act==="wl"){const i=S.cur,k=S.wl.indexOf(i);k<0?S.wl.push(i):S.wl.splice(k,1);save();toast(k<0?"✓ Added to Watchlist":"Removed from Watchlist");render()}
+else if(b.dataset.act==="play")toast("Playing "+M[S.cur].t+"…");
+else if(b.dataset.act==="trailer")toast("Loading trailer…")});
+// D-pad / remote navigation
+document.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT")return;
+if(e.key==="Escape"||e.key==="Backspace"){if(S.v==="detail"){S.v=S.prev;render()}return}
+const k={ArrowRight:[1,0],ArrowLeft:[-1,0],ArrowDown:[0,1],ArrowUp:[0,-1]}[e.key];if(!k)return;e.preventDefault();
+const els=[...document.querySelectorAll("nav button,main button")],a=document.activeElement,i=els.indexOf(a);
+if(i<0){els[0].focus();return}const r=a.getBoundingClientRect();let best,bd=1e9;
+for(const el of els){if(el===a)continue;const q=el.getBoundingClientRect(),dx=q.left-r.left,dy=q.top-r.top;
+if((k[0]>0&&dx<=4)||(k[0]<0&&dx>=-4)||(k[1]>0&&dy<=4)||(k[1]<0&&dy>=-4))continue;
+const d=k[0]?Math.abs(dx)+Math.abs(dy)*3:Math.abs(dy)+Math.abs(dx)*3;if(d<bd){bd=d;best=el}}
+if(best){best.focus();best.scrollIntoView({block:"nearest",inline:"nearest"})}});
+setTimeout(()=>$("#splash").classList.add("off"),1800);
+render();
+</script>
+</body>
+</html>
